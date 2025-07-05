@@ -1,3 +1,4 @@
+/* Existing styles */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +11,144 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Updated styles for react-datepicker */
+.date-picker {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  font-family: 'Inter', sans-serif;
+}
+
+.time-picker {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  font-size: 16px;
+  color: #333;
+  font-family: 'Inter', sans-serif;
+  background: transparent;
+  cursor: pointer;
+}
+
+.react-datepicker__time-container {
+  width: 120px;
+}
+
+.react-datepicker__time-box {
+  width: 100% !important;
+}
+
+.react-datepicker__time-list-item {
+  font-size: 14px;
+  padding: 8px !important;
+}
+
+/* Styles for react-calendar */
+.react-calendar {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+}
+
+.react-calendar__tile--active {
+  background: #007bff;
+  color: white;
+}
+
+.react-calendar__tile--now {
+  background: #e0f7ff;
+}
+
+.react-calendar__navigation button {
+  color: #007bff;
+  font-size: 16px;
+}
+
+.react-calendar__month-view__days__day {
+  font-size: 16px;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  font-size: 14px;
+}
+
+/* Responsive styles for DriverLogHistoryScreen */
+@media (max-width: 768px) {
+  .driver-log-history-container {
+    flex-direction: column !important;
+  }
+  .driver-log-history-calendar-container {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .driver-log-history-logs-container {
+    max-height: none !important;
+  }
+}
+
+/* Styles for status slider in CreateOrderScreen */
+.status-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 16px auto;
+  user-select: none;
+}
+
+.status-line {
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  position: relative;
+  pointer-events: none;
+}
+
+.status-point {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: absolute;
+  top: -4px;
+  cursor: pointer;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.status-arrow {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: -13px;
+  transition: transform 0.3s ease;
+  z-index: 1;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.status-arrow:active {
+  cursor: grabbing;
+}
+
+.status-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.status-label-text {
+  font-size: 12px;
+  text-align: center;
+  flex: 1;
 }

@@ -13,6 +13,10 @@ import { FONTS } from "../constants/fonts.js";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment";
+
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from "firebase/auth";
+
 import {
   XMarkIcon,
   UserIcon,
@@ -166,43 +170,102 @@ const CreateManualInvoiceScreen = () => {
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
-  async function generateInvoicePDF(invoiceData) {
+  // Frontend
+  const functions = getFunctions();
+  const generateInvoicePDF = httpsCallable(functions, "generateInvoicePDF");
+  function isValidBase64(str) {
+    if (typeof str !== "string" || str.length === 0) return false;
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str) && str.length % 4 === 0;
+  }
+  const generateAndDownloadInvoice = async (invoiceData) => {
     try {
-      const response = await fetch(
-        "https://generateinvoicepdf-qm2xue4t5a-uc.a.run.app",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(invoiceData),
-        }
+      // Show loading state
+      console.log("Generating invoice...");
+      console.log(
+        "Invoice data being sent:",
+        JSON.stringify(invoiceData, null, 2)
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to generate PDF: ${response.status} - ${errorText}`
-        );
+      // Call the cloud function
+      const result = await generateInvoicePDF(invoiceData);
+
+      if (result.data.success) {
+        // Automatically download the PDF
+        const downloadUrl = result.data.downloadUrl;
+
+        // Create a temporary link element and trigger download
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `${result.data.invoiceNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log("Invoice generated and downloaded successfully!");
+        return result.data;
+      } else {
+        throw new Error("Failed to generate invoice");
       }
-
-      // Get the PDF as a blob
-      const pdfBlob = await response.blob();
-
-      // Create a download link for the PDF
-      const url = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${invoiceData.clientName}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      console.log("PDF downloaded successfully");
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Failed to generate invoice PDF. Please try again.");
+      console.error("Error generating invoice:", error);
+      console.error("Error details:", error.details || error.message);
+      throw error;
     }
-  }
+  };
+  // async function generateInvoicePDF(invoiceData) {
+  //   try {
+  //     const response = await fetch(
+  //       "https://generateinvoicepdf-qm2xue4t5a-uc.a.run.app",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(invoiceData),
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(
+  //         `Failed to generate PDF: ${response.status} - ${errorText}`
+  //       );
+  //     }
+
+  //     const pdfBlob = await response.blob();
+  //     console.log("PDF blob size:", pdfBlob.size); // Should be ~30085
+  //     console.log("PDF blob type:", pdfBlob.type); // Should be application/pdf
+
+  //     const url = window.URL.createObjectURL(pdfBlob);
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = `invoice-${invoiceData.clientName.replace(
+  //       /[^a-zA-Z0-9]/g,
+  //       "_"
+  //     )}.pdf`;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     window.URL.revokeObjectURL(url);
+
+  //     console.log("PDF downloaded successfully");
+  //   } catch (error) {
+  //     console.error("Error generating PDF:", error);
+  //     alert("Failed to generate invoice PDF: " + error.message);
+  //   }
+  // }
+
+  // Example usage
+  // const invoiceData = {
+  //   clientName: "TestClient",
+  //   jobName: "TestJob",
+  //   price: 100.0,
+  //   invoiceDate: new Date().toISOString(),
+  //   equipmentName: "TestEquipment",
+  //   description: "TestDescription",
+  //   notes: "TestNotes",
+  // };
+
+  // generateInvoicePDF(invoiceData);
   // Log component mount
   useEffect(() => {
     console.log(
@@ -309,7 +372,7 @@ const CreateManualInvoiceScreen = () => {
         updatedAt: new Date().toISOString(),
       };
 
-      generateInvoicePDF(invoiceData);
+      generateAndDownloadInvoice(invoiceData);
       // console.log("Sending invoice data:", invoiceData);
 
       // const response = await fetch(
@@ -365,7 +428,32 @@ const CreateManualInvoiceScreen = () => {
       setLoading(false);
     }
   };
+  const handleGenerateInvoice = async () => {
+    const invoiceData = {
+      userId: "testid123",
+      type: "manual",
+      clientName: "John Doe",
+      jobId: "job123",
+      jobName: "Equipment Maintenance",
+      equipmentId: "eq456",
+      equipmentName: "Excavator XYZ",
+      description: "Monthly maintenance service",
+      price: 250.0,
+      invoiceDate: new Date().toISOString(),
+      notes: "Payment due within 30 days",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
+    try {
+      await generateAndDownloadInvoice(invoiceData);
+      // Show success message to user
+      alert("Invoice generated and downloaded successfully!");
+    } catch (error) {
+      // Show error message to user
+      alert("Error generating invoice: " + error.message);
+    }
+  };
   const renderJobPicker = () => (
     <div style={styles.pickerContainer}>
       <span style={styles.pickerLabel}>Job</span>
@@ -505,7 +593,7 @@ const CreateManualInvoiceScreen = () => {
         <hr style={styles.divider} />
         <CustomButton
           title={loading ? "Saving..." : "Generate Invoice"}
-          onPress={handleSaveInvoice}
+          onPress={handleGenerateInvoice}
           style={styles.saveButton}
           disabled={loading}
         />
